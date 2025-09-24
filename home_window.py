@@ -78,8 +78,8 @@ class HomeWindow(QWidget):
         layout.setContentsMargins(100, 48, 100, 48)  # top and bottom vertical padding
         self.frames = []
         frame_data = [
-            ("Lungs", "appImages/lungs.jpg"),
-            ("Heart", "appImages/heart.jpg"),
+            ("kidney", "appImages/kidney.jpg"),
+            ("stomach", "appImages/stomach.jpg"),
             ("Liver", "appImages/liver.jpg"),
         ]
         for text, img in frame_data:
@@ -97,9 +97,9 @@ class HomeWindow(QWidget):
         # Remove old layout before setting new one
         old_layout = self.layout()
         if old_layout is not None:
-            QWidget().setLayout(old_layout)  # Detach layout from self
-        # Replace with OrgansViewer
-        self.organs_viewer = OrgansViewer(return_callback=self.show_home)
+            QWidget().setLayout(old_layout)
+        # Replace with OrgansViewer, passing selected organ
+        self.organs_viewer = OrgansViewer(selected_organ=frame_text.lower(), return_callback=self.show_home)
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(self.organs_viewer)
         self.setLayout(main_layout)
@@ -116,8 +116,8 @@ class HomeWindow(QWidget):
         layout.setContentsMargins(100, 48, 100, 48)
         self.frames = []
         frame_data = [
-            ("Lungs", "appImages/lungs.jpg"),
-            ("Heart", "appImages/heart.jpg"),
+            ("kidney", "appImages/kidney.jpg"),
+            ("stomach", "appImages/stomach.jpg"),
             ("Liver", "appImages/liver.jpg"),
         ]
         for text, img in frame_data:
