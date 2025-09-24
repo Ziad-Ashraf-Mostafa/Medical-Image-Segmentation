@@ -15,7 +15,7 @@ class OrgansViewer(QWidget):
         main_layout = QHBoxLayout(self)
         # Sidebar controller
         sidebar = QFrame(self)
-        sidebar.setFixedWidth(320)
+        sidebar.setFixedWidth(360)  
         sidebar.setStyleSheet("background: #232946; border-right: 2px solid #0078d7;")
         sidebar_layout = QVBoxLayout(sidebar)
         sidebar_layout.setAlignment(Qt.AlignTop)
@@ -56,6 +56,7 @@ class OrgansViewer(QWidget):
             for model in organs[selected_organ]:
                 tree = QTreeWidget(sidebar)
                 tree.setHeaderHidden(True)
+                tree.setStyleSheet("QTreeWidget::item { padding-left: 0px; } QTreeWidget { border: none; }")
                 model_item = QTreeWidgetItem([model])
                 tree.addTopLevelItem(model_item)
                 self.pv_actors[model] = {}
@@ -67,7 +68,7 @@ class OrgansViewer(QWidget):
                     controls_layout.setContentsMargins(0,0,0,0)
                     # Part name label
                     part_label = QLabel(file[:file.find('.')])  # Strip extension for cleaner label
-                    part_label.setStyleSheet("color: #fff; font-size: 12px; margin-right: 8px;")
+                    part_label.setStyleSheet("color: #fff; font-size: 12px; margin-right: 8px; margin-left: 0px;")
                     controls_layout.addWidget(part_label)
                     # View/Hide
                     view_checkbox = QCheckBox("View")

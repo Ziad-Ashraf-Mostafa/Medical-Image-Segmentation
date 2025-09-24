@@ -131,5 +131,5 @@ if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)
     win = HomeWindow()
-    win.show()
+    win.showMaximized()
     sys.exit(app.exec_())
