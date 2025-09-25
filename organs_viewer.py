@@ -141,6 +141,7 @@ class OrgansViewer(QWidget):
                     try:
                         threshold = data.mean()
                         mesh = grid.contour([threshold], scalars='values')
+                        mesh = mesh.smooth(n_iter=50, relaxation_factor=0.1)
                         # Assign a unique color for each actor
                         import random
                         default_color = [random.random(), random.random(), random.random()]
