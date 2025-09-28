@@ -1,10 +1,11 @@
 import os
 import nibabel as nib
 import pyvista as pv
+import matplotlib as plt
 from pyvistaqt import QtInteractor
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFrame, QLabel, QPushButton, QTreeWidget, QTreeWidgetItem, QSlider, QColorDialog, QCheckBox
 from PySide6.QtCore import Qt
-
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 
 class OrgansViewer(QWidget):
@@ -17,20 +18,20 @@ class OrgansViewer(QWidget):
         sidebar = QFrame(self)
         sidebar.setFixedWidth(360)  
         sidebar.setStyleSheet("background: #232946; border-right: 2px solid #0078d7;")
-        sidebar_layout = QVBoxLayout(sidebar)
-        sidebar_layout.setAlignment(Qt.AlignTop)
+        self.sidebar_layout = QVBoxLayout(sidebar)
+        self.sidebar_layout.setAlignment(Qt.AlignTop)
         # Return button
         back_btn = QPushButton("←", sidebar)
         back_btn.setFixedSize(48, 48)
         back_btn.setStyleSheet("font-size: 28px; color: #fff; background: #0078d7; border-radius: 24px;")
         if return_callback:
             back_btn.clicked.connect(return_callback)
-        sidebar_layout.addWidget(back_btn)
+        self.sidebar_layout.addWidget(back_btn)
         # Organ title label
         organ_label = QLabel(selected_organ.capitalize(), sidebar)
         organ_label.setStyleSheet("color: #fff; font-size: 24px; font-weight: bold; margin: 16px 0 8px 0;")
         organ_label.setAlignment(Qt.AlignCenter)
-        sidebar_layout.addWidget(organ_label)
+        self.sidebar_layout.addWidget(organ_label)
         # Models tree views
         organs = {
             'kidney': os.listdir(os.path.join(os.path.dirname(__file__), 'kidney')),
@@ -91,14 +92,11 @@ class OrgansViewer(QWidget):
                     view_checkbox.stateChanged.connect(lambda state, m=model, f=file, cb=view_checkbox: self.toggle_actor(m, f, cb.isChecked()))
                     opacity_slider.valueChanged.connect(lambda val, m=model, f=file: self.set_opacity(m, f, val))
                     color_btn.clicked.connect(lambda _, m=model, f=file, btn=color_btn: self.pick_color(m, f, btn))
-                sidebar_layout.addWidget(tree)
+                self.sidebar_layout.addWidget(tree)
         # Main 3D view area for selected organ
         view_layout = QVBoxLayout()
-        nav_bar = QFrame(self)
-        nav_bar.setFixedHeight(60)
-        nav_bar.setStyleSheet("background: #232946; border-bottom: 2px solid #0078d7;")
-        view_layout.addWidget(nav_bar)
         models_area = QHBoxLayout()
+        self.model_widgets = []
         for model in organs[selected_organ]:
             # Create a vertical layout for each model
             model_vbox = QVBoxLayout()
@@ -124,7 +122,11 @@ class OrgansViewer(QWidget):
             table.setItem(1, 2, QTableWidgetItem("10.7"))
             table.setStyleSheet("color: #fff; background: #232946; font-size: 12px;")
             model_vbox.addWidget(table)
-            models_area.addLayout(model_vbox, 1)
+            # Wrap the model_vbox in a QWidget
+            model_widget = QWidget(self)
+            model_widget.setLayout(model_vbox)
+            models_area.addWidget(model_widget, 1)
+            self.model_widgets.append(model_widget)
             # Load and show all files for this model
             for file in organ_files[selected_organ][model]:
                 nii_path = os.path.join(os.path.dirname(__file__), selected_organ, model, file)
@@ -141,7 +143,7 @@ class OrgansViewer(QWidget):
                     try:
                         threshold = data.mean()
                         mesh = grid.contour([threshold], scalars='values')
-                        mesh = mesh.smooth(n_iter=50, relaxation_factor=0.15)
+                        mesh = mesh.smooth(n_iter=50, relaxation_factor=0.1)
                         # Assign a unique color for each actor
                         import random
                         default_color = [random.random(), random.random(), random.random()]
@@ -149,10 +151,20 @@ class OrgansViewer(QWidget):
                         self.pv_actors[model][file] = actor
                     except Exception as e:
                         print(f"Mesh extraction failed for {file}: {e}")
+            # Add 'View slices' button under each model
+            btn = QPushButton("View slices")
+            btn.setStyleSheet("margin-top: 8px; font-size: 14px; background: #0078d7; color: #fff; border-radius: 8px; padding: 4px 12px;")
+            btn.clicked.connect(lambda checked, organ=selected_organ, m=model: self.show_slices_view(organ, m))
+            model_vbox.addWidget(btn)
         view_layout.addLayout(models_area, 1)
+        self.models_area = models_area
+        self.view_layout = view_layout
         main_layout.addWidget(sidebar)
         main_layout.addLayout(view_layout, 1)
         self.setLayout(main_layout)
+
+        self.slice_viewer = None
+        self.slice_viewer_model = None
 
     def toggle_actor(self, model, file, checked):
         actor = self.pv_actors.get(model, {}).get(file)
@@ -172,3 +184,61 @@ class OrgansViewer(QWidget):
             if color.isValid():
                 rgb = color.getRgb()[:3]
                 actor.GetProperty().SetColor([c/255.0 for c in rgb])
+
+    def show_slices_view(self, organ, model):
+        # Hide all model viewers
+        for w in self.model_widgets:
+            w.hide()
+        # Remove previous slice_viewer if exists
+        if self.slice_viewer is not None:
+            self.view_layout.removeWidget(self.slice_viewer)
+            self.slice_viewer.deleteLater()
+            self.slice_viewer = None
+
+        # Use fixed scan file
+        scan_file = os.path.join(os.path.dirname(__file__), "scan.nii.gz")
+        # Collect all .nii/.nii.gz files for the selected model as organs
+        organ_files = {}
+        model_dir = os.path.join(os.path.dirname(__file__), organ, model)
+        for f in os.listdir(model_dir):
+            if f.endswith('.nii') or f.endswith('.nii.gz'):
+                organ_files[f] = os.path.join(model_dir, f)
+        # Get color and opacity from sidebar controls (default if not set)
+        color = (0, 0.5, 1, 1)
+        opacity = 0.5
+        if hasattr(self, 'pv_actors') and model in self.pv_actors:
+            for file, actor in self.pv_actors[model].items():
+                c = actor.GetProperty().GetColor()
+                color = (c[0], c[1], c[2], 1)
+                opacity = actor.GetProperty().GetOpacity()
+                break
+        colors = {f: color for f in organ_files}
+        opacities = {f: opacity for f in organ_files}
+        # Import SegmentationViewer from mytest.py
+        from slicer import SegmentationViewer
+        self.slice_viewer = SegmentationViewer(scan_file, organ_files, colors, opacities)
+        # Add back button
+        back_btn = QPushButton("            ← Back to models            ", self.slice_viewer)
+        back_btn.setStyleSheet("font-size: 16px; color: #fff; background: #0078d7; border-radius: 8px; margin-bottom: 8px;")
+        back_btn.clicked.connect(self.hide_slices_view)
+        self.slice_viewer.layout().addWidget(back_btn, 2, 0, 1, 2, alignment=Qt.AlignCenter)
+        self.slice_viewer_model = model
+        self.view_layout.addWidget(self.slice_viewer)
+        
+        self.slice_viewer.show()
+        # Update sidebar to show only the opened model
+        for i in reversed(range(self.sidebar_layout.count())):
+            widget = self.sidebar_layout.itemAt(i).widget()
+            if widget:
+                widget.setParent(None)
+        model_label = QLabel(model.capitalize(), self)
+        model_label.setStyleSheet("color: #fff; font-size: 24px; font-weight: bold; margin: 16px 0 8px 0;")
+        model_label.setAlignment(Qt.AlignCenter)
+        self.sidebar_layout.addWidget(model_label)
+
+    def hide_slices_view(self):
+        if self.slice_viewer:
+            self.slice_viewer.hide()
+        # Show all model viewers
+        for w in self.model_widgets:
+            w.show()
