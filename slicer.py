@@ -103,7 +103,7 @@ class SliceViewer(QtWidgets.QWidget):
 
 
 class SegmentationViewer(QtWidgets.QWidget):
-    def __init__(self, scan_file, organ_files, colors, opacities=None, parent=None):
+    def __init__(self, scan_file, organ_files, colors, opacities=None, meshes=None, mesh_properties=None, parent=None):
         super().__init__(parent)
 
         self.scan = nib.load(scan_file).get_fdata()
@@ -133,23 +133,37 @@ class SegmentationViewer(QtWidgets.QWidget):
         self.sagittal_view.canvas.setMinimumSize(250, 180)  # narrower sagittal
         self.coronal_view.setMaximumWidth(360)   # keep coronal bigger (ok already)
 
-        self.plotter = QtInteractor(self)
-        self.plotter.set_background("black")
-        self.plotter.interactor.setMinimumWidth(100)
-
-        self.actors = {}
-        for organ, mask in self.organs.items():
-            try:
-                mask_bool = (mask > 0.5).astype(np.uint8)
-                grid = pv.wrap(mask_bool)
-                surf = grid.contour([0.5])
-                color = self.colors.get(organ, (1.0, 0.5, 0.0, 0.5))[:3]
+        # If meshes and mesh_properties are provided, use them for 3D view
+        if meshes is not None and mesh_properties is not None:
+            self.plotter = QtInteractor(self)
+            self.plotter.set_background("black")
+            self.plotter.interactor.setMinimumWidth(100)
+            self.actors = {}
+            for organ, mesh in meshes.items():
+                props = mesh_properties.get(organ, {})
+                color = props.get('color', self.colors.get(organ, (1.0, 0.5, 0.0, 0.5))[:3])
+                opacity = props.get('opacity', self.opacities.get(organ, 0.5))
                 actor = self.plotter.add_mesh(
-                    surf, color=color, opacity=self.opacities.get(organ, 0.5), name=organ
+                    mesh, color=color, opacity=opacity, name=organ
                 )
                 self.actors[organ] = actor
-            except Exception as e:
-                print(f"[warn] mesh failed for {organ}: {e}")
+        else:
+            self.plotter = QtInteractor(self)
+            self.plotter.set_background("white")
+            self.plotter.interactor.setMinimumWidth(100)
+            self.actors = {}
+            for organ, mask in self.organs.items():
+                try:
+                    mask_bool = (mask > 0.5).astype(np.uint8)
+                    grid = pv.wrap(mask_bool)
+                    surf = grid.contour([0.5])
+                    color = self.colors.get(organ, (1.0, 0.5, 0.0, 0.5))[:3]
+                    actor = self.plotter.add_mesh(
+                        surf, color=color, opacity=self.opacities.get(organ, 0.5), name=organ
+                    )
+                    self.actors[organ] = actor
+                except Exception as e:
+                    print(f"[warn] mesh failed for {organ}: {e}")
 
         grid = QtWidgets.QGridLayout(self)
         grid.setSpacing(6)
