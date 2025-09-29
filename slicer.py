@@ -136,7 +136,7 @@ class SegmentationViewer(QtWidgets.QWidget):
         # If meshes and mesh_properties are provided, use them for 3D view
         if meshes is not None and mesh_properties is not None:
             self.plotter = QtInteractor(self)
-            self.plotter.set_background("black")
+            self.plotter.set_background("white")
             self.plotter.interactor.setMinimumWidth(100)
             self.actors = {}
             for organ, mesh in meshes.items():

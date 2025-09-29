@@ -61,8 +61,12 @@ class OrgansViewer(QWidget):
             for model in organs[self.selected_organ]:
                 tree = QTreeWidget(sidebar)
                 tree.setHeaderHidden(True)
-                tree.setStyleSheet("QTreeWidget::item { padding-left: 0px; } QTreeWidget { border: none; }")
+                tree.setStyleSheet("QTreeWidget::item { padding-left: 0px; font-size: 14px; font-weight: bold; } QTreeWidget { border: none; }")
                 model_item = QTreeWidgetItem([model])
+                font = model_item.font(0)
+                font.setPointSize(12)
+                font.setBold(True)
+                model_item.setFont(0, font)
                 tree.addTopLevelItem(model_item)
                 self.pv_actors[model] = {}
                 controls = []
@@ -97,14 +101,11 @@ class OrgansViewer(QWidget):
                 self.sidebar_trees[model] = tree
                 self.sidebar_controls[model] = controls
     # Add all model trees (for model view)
+        # Add model labels above each tree with increased font size
         self.model_tree_widgets = []
         for model in organs[self.selected_organ]:
-            model_label = QLabel(model.capitalize(), sidebar)
-            model_label.setStyleSheet("color: #fff; font-size: 18px; font-weight: bold; margin-bottom: 8px;")
-            model_label.setAlignment(Qt.AlignCenter)
-            self.sidebar_layout.addWidget(model_label)
             self.sidebar_layout.addWidget(self.sidebar_trees[model])
-            self.model_tree_widgets.append((model_label, self.sidebar_trees[model]))
+            self.model_tree_widgets.append((None, self.sidebar_trees[model]))
         # Main 3D view area for selected organ
         view_layout = QVBoxLayout()
         models_area = QHBoxLayout()
@@ -121,18 +122,55 @@ class OrgansViewer(QWidget):
             pv_widget = QtInteractor(self)
             self.pv_widgets[model] = pv_widget
             model_vbox.addWidget(pv_widget, 1)
+
             # Add evaluation table below viewer
-            from PySide6.QtWidgets import QTableWidget, QTableWidgetItem
-            table = QTableWidget(2, 3, self)
-            table.setHorizontalHeaderLabels(["Dice", "IoU", "Hausdorff"])
-            table.setVerticalHeaderLabels(["Model", "Reference"])
-            table.setItem(0, 0, QTableWidgetItem("0.85"))
-            table.setItem(0, 1, QTableWidgetItem("0.78"))
-            table.setItem(0, 2, QTableWidgetItem("12.3"))
-            table.setItem(1, 0, QTableWidgetItem("0.88"))
-            table.setItem(1, 1, QTableWidgetItem("0.81"))
-            table.setItem(1, 2, QTableWidgetItem("10.7"))
-            table.setStyleSheet("color: #fff; background: #232946; font-size: 12px;")
+            from PySide6.QtWidgets import QTableWidget, QTableWidgetItem; import pandas as pd
+            if model == "Total Segmentator": 
+                model_abberviation = "ts"
+            elif model == "Swin UNETR":
+                model_abberviation = "swin"
+            elif model == "Whole Body CT":
+                model_abberviation = "ts"
+
+            organs_col = os.listdir(os.path.dirname(__file__)+"/"+ self.selected_organ+"/"+ model)
+            table = QTableWidget(len(organs_col)+1, 3, self)
+            table.setHorizontalHeaderLabels(["Dice", "IoU", "Volume Similarity"])
+            row_labels = [file[:file.index(".")] for file in organs_col] + ["Average"]
+            table.setVerticalHeaderLabels(row_labels)
+            
+
+            # Reading csv and visualizing evaluation matrix data on the app
+            df = pd.read_csv("evaluation.csv", header=0)
+            df.columns = ["Model", "case", "Organ", "Dice", "IoU", "Pred_Volume", "GT_Volume"]
+
+            i = 0
+            for organ in organs_col:
+                organ_name = organ.split(".")[0]  # extracting organ name from the file name
+
+                dice = df.query(f'Model == "{model_abberviation}" and Organ == "{organ_name}"')["Dice"].values
+                iou  = df.query(f'Model == "{model_abberviation}" and Organ == "{organ_name}"')["IoU"].values
+                vs1  = df.query(f'Model == "{model_abberviation}" and Organ == "{organ_name}"')["Pred_Volume"].values
+                vs2  = df.query(f'Model == "{model_abberviation}" and Organ == "{organ_name}"')["GT_Volume"].values
+
+                try:
+                    table.setItem(i, 0, QTableWidgetItem(f"{float(dice[0]):.2f}"))
+                    table.setItem(i, 1, QTableWidgetItem(f"{float(iou[0]):.2f}"))
+                    table.setItem(i, 2, QTableWidgetItem(f"{(float(abs(vs1[0] - vs2[0])/(vs1[0] + vs2[0])+1)):.2f}"))
+                except:
+                    print(model_abberviation, organ, dice, iou)
+                i += 1
+
+            # Average row
+            avg_dice = df.query(f"Model == '{model_abberviation}'")["Dice"].mean()
+            avg_iou = df.query(f"Model == '{model_abberviation}'")["IoU"].mean()
+            avg_vs1 = df.query(f"Model == '{model_abberviation}'")["Pred_Volume"].mean()
+            avg_vs2 = df.query(f"Model == '{model_abberviation}'")["GT_Volume"].mean()
+            table.setItem(i, 0, QTableWidgetItem(f"{avg_dice:.2f}"))
+            table.setItem(i, 1, QTableWidgetItem(f"{avg_iou:.2f}"))
+            table.setItem(i, 2, QTableWidgetItem(f"{abs(avg_vs1 - avg_vs2)/(avg_vs1 + avg_vs2)+1:.2f}"))
+
+            table.resizeColumnsToContents()
+            table.setStyleSheet("color: #fff; background: #232946; font-size: 12px; padding")
             model_vbox.addWidget(table)
             # Wrap the model_vbox in a QWidget
             model_widget = QWidget(self)
@@ -330,7 +368,8 @@ class OrgansViewer(QWidget):
         self.sidebar_layout.addWidget(self.return_btn)
         self.sidebar_layout.addWidget(self.organ_label_widget)
         for model_label, tree_widget in self.model_tree_widgets:
-            self.sidebar_layout.addWidget(model_label)
+            if model_label is not None:
+                self.sidebar_layout.addWidget(model_label)
             self.sidebar_layout.addWidget(tree_widget)
         # Show all model viewers
         for w in self.model_widgets:
