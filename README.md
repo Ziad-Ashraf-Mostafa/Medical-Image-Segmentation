@@ -204,4 +204,4 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 For queries or suggestions:
 - Open an issue on the [GitHub repository](https://github.com/Ziad-Ashraf-Mostafa/Medical-Image-Segmentation/issues).
-- Email: [Your Email Here] <!-- Replace with a valid email -->
+- Email (Contact any member of the team): aziad3083@gmail.com, ahmedmamdouhenan18@gmail.com, yahya.ismail06@eng-st.cu.edg.eg, hakeem.taha06@eng-st.cu.edu.eg <!-- Replace with a valid email -->
