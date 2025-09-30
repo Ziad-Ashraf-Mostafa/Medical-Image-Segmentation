@@ -1,7 +1,10 @@
 # Medical Image Segmentation
 
-<!-- ![Project Banner](#) <!-- Replace with a banner image -->
+<p align="center">
+  <img src="Project Poster.png" alt="Medical Image Segmentation Banner" width="700">
+</p>
 
+# Medical Image Segmentation
 ## Overview
 
 **Medical Image Segmentation** is a Python-based project designed to segment medical images accurately and efficiently, and allows for comprehensive evaluation of the used models. This repository is a project submitted to the Biomedical Engineering Department at Cairo University.
