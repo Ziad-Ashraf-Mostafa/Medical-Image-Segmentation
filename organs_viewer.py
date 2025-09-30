@@ -130,7 +130,7 @@ class OrgansViewer(QWidget):
             elif model == "Swin UNETR":
                 model_abberviation = "swin"
             elif model == "Whole Body CT":
-                model_abberviation = "ts"
+                model_abberviation = "wbct"
 
             organs_col = os.listdir(os.path.dirname(__file__)+"/"+ self.selected_organ+"/"+ model)
             table = QTableWidget(len(organs_col)+1, 3, self)
@@ -143,6 +143,7 @@ class OrgansViewer(QWidget):
             df = pd.read_csv("evaluation.csv", header=0)
             df.columns = ["Model", "case", "Organ", "Dice", "IoU", "Pred_Volume", "GT_Volume"]
 
+            vol_similarity = []
             i = 0
             for organ in organs_col:
                 organ_name = organ.split(".")[0]  # extracting organ name from the file name
@@ -155,7 +156,9 @@ class OrgansViewer(QWidget):
                 try:
                     table.setItem(i, 0, QTableWidgetItem(f"{float(dice[0]):.2f}"))
                     table.setItem(i, 1, QTableWidgetItem(f"{float(iou[0]):.2f}"))
-                    table.setItem(i, 2, QTableWidgetItem(f"{(float(abs(vs1[0] - vs2[0])/(vs1[0] + vs2[0])+1)):.2f}"))
+                    vs = (float(1 - abs(vs1[0] - vs2[0])/(vs1[0] + vs2[0])))
+                    vol_similarity.append(vs)
+                    table.setItem(i, 2, QTableWidgetItem(f"{vs:.2f}"))
                 except:
                     print(model_abberviation, organ, dice, iou)
                 i += 1
@@ -167,7 +170,8 @@ class OrgansViewer(QWidget):
             avg_vs2 = df.query(f"Model == '{model_abberviation}'")["GT_Volume"].mean()
             table.setItem(i, 0, QTableWidgetItem(f"{avg_dice:.2f}"))
             table.setItem(i, 1, QTableWidgetItem(f"{avg_iou:.2f}"))
-            table.setItem(i, 2, QTableWidgetItem(f"{abs(avg_vs1 - avg_vs2)/(avg_vs1 + avg_vs2)+1:.2f}"))
+            
+            table.setItem(i, 2, QTableWidgetItem(f"{(sum(vol_similarity)/len(vol_similarity)):.2f}"))
 
             table.resizeColumnsToContents()
             table.setStyleSheet("color: #fff; background: #232946; font-size: 12px; padding")
