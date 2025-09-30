@@ -1,6 +1,6 @@
 # Medical Image Segmentation
 
-![Project Banner](#) <!-- Replace with a banner image -->
+<!-- ![Project Banner](#) <!-- Replace with a banner image -->
 
 ## Overview
 
@@ -69,9 +69,9 @@ Here’s how you can run and use the project:
 ## Evaluation Results
 | Model | Dice | IoU | Volume Similarity |
 | :------ | :------ | :---------- | :------ |
-| Swin UNETR | 0.557 | 0.386 |  |
-| Total Segmentator | 0.949 | 0.904 |  | 
-| WholeBody CT | 0.831 | 0.759 |  |
+| Swin UNETR | 0.557 | 0.386 | 0.92 |
+| Total Segmentator | 0.949 | 0.904 | 0.87 | 
+| WholeBody CT | 0.831 | 0.759 | 0.91 |
 ---
 ## Examples
 
@@ -164,12 +164,13 @@ Here are some examples of how to use the project:
 
 ## Screenshots and Visuals
 
-### Input vs. Segmented Output
-![Input Image](#) <!-- Placeholder for input image -->
-![Segmented Output](#) <!-- Placeholder for segmented output -->
+### Segmented Output
+![AppImages/home_window.png](#) <!-- Placeholder for input image -->
+![AppImages/models_view.png](#) <!-- Placeholder for segmented output -->
+![AppImages/slicer_view.png](#) <!-- Placeholder for segmented output -->
 
 ### Workflow GIF
-![Workflow Animation](#) <!-- Placeholder for GIF -->
+![AppImages/app_show.gif](#) <!-- Placeholder for GIF -->
 
 ---
 
@@ -204,4 +205,4 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 For queries or suggestions:
 - Open an issue on the [GitHub repository](https://github.com/Ziad-Ashraf-Mostafa/Medical-Image-Segmentation/issues).
-- Email (Contact any member of the team): aziad3083@gmail.com, ahmedmamdouhenan18@gmail.com, yahya.ismail06@eng-st.cu.edg.eg, hakeem.taha06@eng-st.cu.edu.eg <!-- Replace with a valid email -->
+- Email (Contact any member of the team): ziad.abd-elawad06@eng-st.cu.edu.eg, ahmedmamdouhenan18@gmail.com, yahya.ismail06@eng-st.cu.edg.eg, hakeem.taha06@eng-st.cu.edu.eg
