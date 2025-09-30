@@ -165,12 +165,12 @@ Here are some examples of how to use the project:
 ## Screenshots and Visuals
 
 ### Segmented Output
-![AppImages/home_window.png](#) <!-- Placeholder for input image -->
-![AppImages/models_view.png](#) <!-- Placeholder for segmented output -->
-![AppImages/slicer_view.png](#) <!-- Placeholder for segmented output -->
+![appImages/home_window.png](#) <!-- Placeholder for input image -->
+![appImages/models_view.png](#) <!-- Placeholder for segmented output -->
+![appImages/slicer_view.png](#) <!-- Placeholder for segmented output -->
 
 ### Workflow GIF
-![AppImages/app_show.gif](#) <!-- Placeholder for GIF -->
+![appImages/app_show.gif](#) <!-- Placeholder for GIF -->
 
 ---
 
