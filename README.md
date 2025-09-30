@@ -172,9 +172,6 @@ Here are some examples of how to use the project:
 ### Workflow GIF
 ![AppImages/app_show.gif](#) <!-- Placeholder for GIF -->
 
-### Workflow Video
-![AppImages/app_show.mp4](#)
-
 ---
 
 ## Contributing
